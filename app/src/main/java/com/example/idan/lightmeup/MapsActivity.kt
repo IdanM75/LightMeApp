@@ -5,8 +5,11 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.view.ViewGroup
 import android.widget.Toast
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
@@ -69,15 +72,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
 
         val client = OkHttpClient()
-        val address = "192.168.1.34"
+        val mHandler: Handler = Handler(Looper.getMainLooper())
+        val mMapView: ViewGroup = findViewById(R.id.mapLayout);
+
+        val address = "10.0.0.2"
         val port = "5000"
         val route = "/get_lighters_latlng"
         val url = "http://" + address + ":" + port + route
 
-        val parser: Parser = Parser()
         val request = Request.Builder()
                 .url(url)
                 .build()
+
+        var lightersLatLng = listOf<LatLng>()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -85,33 +92,40 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful()) {
-                    println("hihihi1")
                     val json1 = response.body()!!.string()
-                    //                println(response.body().toString())
                     println(json1)
                     class DataSon(val lat: Double, val lng: Double)
                     class Data(val lighters_latlng: Array<DataSon>)
                     val json2 = Klaxon().parse<Data>(json1)
-//                    println(myData)
-                    //                println("hihihi13")
-//                    val json2: JsonObject = parser.parse(json1) as JsonObject
-                    println(json2)
-                    println("hihihi2")
                     for (item2 in json2!!.lighters_latlng) {
                         val lat: Double = item2.lat
                         val lng: Double = item2.lng
                         val latlng = LatLng(lat, lng)
-                        println("hihihi")
                         println(latlng.toString())
-                        googleMap.addMarker(MarkerOptions().position(latlng)
-                                .title("h")
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
+                        lightersLatLng += latlng
                     }
+
+                    mHandler.post(Runnable() {
+                        run() {
+                            for (latlng in lightersLatLng) {
+                                println("ido")
+                                googleMap.addMarker(MarkerOptions().position(latlng)
+                                        .title("h")
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
+                            }
+                            mMapView.invalidate()
+                        }
+                    });
                 }
             }
         })
         client.dispatcher().executorService().shutdown()
+
     }
+
+
+
+
 
     private fun setUpMap() {
         if (ActivityCompat.checkSelfPermission(this,
