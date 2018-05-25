@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.ProgressBar
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.auth.api.Auth
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -23,6 +25,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        MobileAds.initialize(this, "ca-app-pub-3096868502930398~4354694161")
+        val adRequest = AdRequest.Builder()
+                .addTestDevice("ca-app-pub-3096868502930398~4354694161")
+                .build()
 
         if (getIntent().getBooleanExtra("EXIT", false)) {
             finish();
@@ -68,6 +75,7 @@ class MainActivity : AppCompatActivity() {
                 val intent = Intent(this, MapsActivity::class.java)
 //                intent.putExtra("accountId", account.id)
                 intent.putExtra("accountDisplayName", account.displayName)
+                intent.putExtra("accountId", account.id)
                 startActivity(intent)
             }
         }
