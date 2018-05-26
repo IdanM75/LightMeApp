@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">LightMeUp</string>
     <string name="title_activity_maps">Map</string>
+    <string name="menu">menu</string>
+    <string name="Hello">TextView</string>
+    <string name="Settings">Settings</string>
+    <string name="Rate_Us">Rate Us</string>
+    <string name="About">About</string>
 </resources>

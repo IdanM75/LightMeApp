@@ -9,7 +9,12 @@ import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.view.MenuItem
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
 import com.arsy.maps_library.MapRadar
 import com.beust.klaxon.Klaxon
@@ -37,22 +42,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var backPressed: Long = 0
     lateinit var mAdView : AdView
+    val ipAdress: String = "192.168.1.40"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
-        MobileAds.initialize(this,
-                "ca-app-pub-3096868502930398~4354694161")
+        val accountDisplayName: String = intent.getStringExtra("accountDisplayName")
+        findViewById<TextView>(R.id.mapTextView).setText("Let's get a light $accountDisplayName")
 
+        val clickListener = View.OnClickListener { view ->
+            when (view.id) {
+                R.id.buttonMenu -> {
+                    showPopup(view)
+                }
+            }
+        }
+        findViewById<ImageButton>(R.id.buttonMenu).setOnClickListener(clickListener)
+
+        MobileAds.initialize(this, "ca-app-pub-3096868502930398~4354694161")
         mAdView = findViewById(R.id.adView)
         val adRequest = AdRequest.Builder().build()
         mAdView.loadAd(adRequest)
-
-//        MobileAds.initialize(this, "ca-app-pub-3096868502930398~4354694161")
-//        val adRequest = AdRequest.Builder()
-//                .addTestDevice("ca-app-pub-3096868502930398~4354694161")
-//                .build()
 
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
@@ -67,17 +78,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         map = googleMap
         map.getUiSettings().setZoomControlsEnabled(true)
         map.setOnMarkerClickListener(this)
+
         setUpMap()
 
-
         val client = OkHttpClient()
-        val mHandler: Handler = Handler(Looper.getMainLooper())
+        val mHandler = Handler(Looper.getMainLooper())
         val mMapView: ViewGroup = findViewById(R.id.mapLayout);
 
-        val address = "192.168.1.34"
         val port = "5000"
-        val route = "/get_lighters_latlng"
-        val url = "http://" + address + ":" + port + route
+        val accountId: String = intent.getStringExtra("accountId")
+        val route = "/get_lighters_latlng?userId=" + accountId
+        val url = "http://" + ipAdress + ":" + port + route
 
         val request = Request.Builder()
                 .url(url)
@@ -85,38 +96,41 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
         var lightersLatLng = listOf<LatLng>()
 
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful()) {
-                    val json1 = response.body()!!.string()
-                    println(json1)
-                    class DataSon(val lat: Double, val lng: Double)
-                    class Data(val lighters_latlng: Array<DataSon>)
-                    val json2 = Klaxon().parse<Data>(json1)
-                    for (item2 in json2!!.lighters_latlng) {
-                        val lat: Double = item2.lat
-                        val lng: Double = item2.lng
-                        val latlng = LatLng(lat, lng)
-                        println(latlng.toString())
-                        lightersLatLng += latlng
-                    }
-
-                    mHandler.post(Runnable() {
-                        run() {
-                            for (latlng in lightersLatLng) {
-                                googleMap.addMarker(MarkerOptions().position(latlng)
-                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
-                            }
-                            mMapView.invalidate()
-                        }
-                    });
+        Handler().postDelayed({
+            // This method will be executed once the timer is over
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
                 }
-            }
-        })
-        client.dispatcher().executorService().shutdown()
+
+                override fun onResponse(call: Call, response: Response) {
+                    if (response.isSuccessful()) {
+                        val json1 = response.body()!!.string()
+                        println(json1)
+                        class DataSon(val lat: Double, val lng: Double)
+                        class Data(val lighters_latlng: Array<DataSon>)
+                        val json2 = Klaxon().parse<Data>(json1)
+                        for (item2 in json2!!.lighters_latlng) {
+                            val lat: Double = item2.lat
+                            val lng: Double = item2.lng
+                            val latlng = LatLng(lat, lng)
+                            println(latlng.toString())
+                            lightersLatLng += latlng
+                        }
+
+                        mHandler.post(Runnable() {
+                            run() {
+                                for (latlng in lightersLatLng) {
+                                    googleMap.addMarker(MarkerOptions().position(latlng)
+                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
+                                }
+                                mMapView.invalidate()
+                            }
+                        })
+                    }
+                }
+            })
+            client.dispatcher().executorService().shutdown()
+        }, 5000)
     }
 
     private fun setUpMap() {
@@ -135,10 +149,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
                 val client = OkHttpClient()
 
-                val address = "192.168.1.34"
                 val port = "5000"
                 val route = "/my_location"
-                val url = "http://" + address + ":" + port + route
+                val url = "http://" + ipAdress + ":" + port + route
                 val currentLat: Double = currentLatLng.latitude
                 val currentLng: Double = currentLatLng.longitude
                 val accountId: String = intent.getStringExtra("accountId")
@@ -169,7 +182,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 //                        .strokeWidth(2.0F)
 //                map.addCircle(circleOptions)
 
-
                 val mapRadar = MapRadar(map, currentLatLng, this)
                 mapRadar.withDistance(700)
                 mapRadar.withOuterCircleStrokeColor(0xfccd29)
@@ -194,5 +206,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             Toast.makeText(baseContext, "Press once again to exit", Toast.LENGTH_SHORT).show()
         }
         backPressed = System.currentTimeMillis()
+    }
+
+    private fun showPopup(view: View) {
+        var popup: PopupMenu? = null;
+        popup = PopupMenu(this, view)
+        popup.inflate(R.menu.menu_map)
+        popup.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener { item: MenuItem? ->
+            when (item!!.itemId) {
+                R.id.header1 -> {
+                    Toast.makeText(this@MapsActivity, item.title, Toast.LENGTH_SHORT).show();
+                }
+                R.id.header2 -> {
+                    Toast.makeText(this@MapsActivity, item.title, Toast.LENGTH_SHORT).show();
+                }
+                R.id.header3 -> {
+                    Toast.makeText(this@MapsActivity, item.title, Toast.LENGTH_SHORT).show();
+                }
+            }
+            true
+        })
+        popup.show()
     }
 }
