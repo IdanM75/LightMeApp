@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
     android:id="@+id/mapLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -15,23 +16,23 @@
         android:layout_marginBottom="50dp"
         tools:context=".MapsActivity" />
 
-    <!--<android.support.v7.widget.Toolbar-->
-        <!--android:id="@+id/toolbar"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="60dp"-->
-        <!--android:layout_marginTop="0dp"-->
-        <!--android:background="?attr/colorPrimary"-->
-        <!--android:minHeight="?attr/actionBarSize"-->
-        <!--android:theme="?attr/actionBarTheme" />-->
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="0dp"
+        android:background="?attr/colorPrimaryDark"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme">
+    </android.support.v7.widget.Toolbar>
+
 
     <com.google.android.gms.ads.AdView xmlns:ads="http://schemas.android.com/apk/res-auto"
         android:id="@+id/adView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:visibility="visible"
-        android:background="?attr/colorPrimary"
         ads:adSize="SMART_BANNER"
         ads:adUnitId="ca-app-pub-3940256099942544/6300978111">
         <!--need to change unit id-->

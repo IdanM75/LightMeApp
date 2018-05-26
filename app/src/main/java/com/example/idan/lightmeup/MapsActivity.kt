@@ -13,6 +13,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import com.arsy.maps_library.MapRadar
 import com.beust.klaxon.Klaxon
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -34,10 +36,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var backPressed: Long = 0
+    lateinit var mAdView : AdView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
+        MobileAds.initialize(this,
+                "ca-app-pub-3096868502930398~4354694161")
+
+        mAdView = findViewById(R.id.adView)
+        val adRequest = AdRequest.Builder().build()
+        mAdView.loadAd(adRequest)
+
+//        MobileAds.initialize(this, "ca-app-pub-3096868502930398~4354694161")
+//        val adRequest = AdRequest.Builder()
+//                .addTestDevice("ca-app-pub-3096868502930398~4354694161")
+//                .build()
 
         val mapFragment = supportFragmentManager
                 .findFragmentById(R.id.map) as SupportMapFragment
