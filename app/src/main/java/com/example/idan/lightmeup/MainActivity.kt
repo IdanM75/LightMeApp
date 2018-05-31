@@ -1,12 +1,17 @@
 package com.example.idan.lightmeup
 
 import android.content.Intent
+import android.graphics.Typeface
+import android.media.AudioManager.AUDIOFOCUS_NONE
 import android.media.MediaPlayer.OnPreparedListener
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.support.annotation.RequiresApi
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.ProgressBar
+import android.widget.TextView
 import com.google.android.gms.auth.api.Auth
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -15,11 +20,16 @@ import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.GoogleApiClient
 
 
+
+
+
+
 class MainActivity : AppCompatActivity() {
 
     val RC_SIGN_IN: Int = 9000
 
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -29,6 +39,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         startBackgroundVideo()
+
+        val tx = findViewById(R.id.headline) as TextView
+        val custom_font = Typeface.createFromAsset(assets, "fonts/font1.ttf")
+        tx.typeface = custom_font
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
@@ -64,21 +78,25 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == RC_SIGN_IN) {
             val googleResult: GoogleSignInResult = Auth.GoogleSignInApi.getSignInResultFromIntent(data)
             if (googleResult.isSuccess) {
-                val account: GoogleSignInAccount = googleResult.signInAccount!!
+                val googleAccount: GoogleSignInAccount = googleResult.signInAccount!!
                 val intent = Intent(this, MapsActivity::class.java)
-//                intent.putExtra("accountId", account.id)
-                intent.putExtra("accountDisplayName", account.displayName)
-                intent.putExtra("accountId", account.id)
+                intent.putExtra("googleAccount", googleAccount)
                 startActivity(intent)
             }
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun startBackgroundVideo() {
         val videoView = findViewById<ScaleableVideoView>(R.id.scaleableVideoView)
         val uri = Uri.parse("android.resource://" + packageName + "/" + R.raw.light_slow)
         videoView.setVideoURI(uri)
-        videoView.start()
-        videoView.setOnPreparedListener(OnPreparedListener { mp -> mp.isLooping = true })
+
+        videoView.setAudioFocusRequest(AUDIOFOCUS_NONE)
+
+        videoView.setOnPreparedListener(OnPreparedListener {
+            mp -> mp.isLooping = true
+            videoView.start()
+        })
     }
 }

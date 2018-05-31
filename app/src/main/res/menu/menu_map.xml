@@ -1,14 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_alignParentStart="true"
+    android:layout_alignParentRight="true"
+    android:layout_gravity="start"
+    >
 
     <item
-        android:id="@+id/header1"
-        android:title="@string/Settings" />
-    <item
-        android:id="@+id/header2"
-        android:title="@string/Rate_Us" />
-    <item
-        android:id="@+id/header3"
-        android:title="@string/About" />
+        android:layout_alignParentStart="true"
+        android:layout_alignParentRight="true"
+        android:id="@+id/action_profile"
+        android:title="action_profile"
+        android:icon="@drawable/person"
+        android:layout_gravity="start"
+        app:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/action_settings"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentRight="true"
+        android:title="action_settings"
+        android:icon="@drawable/settings"
+        android:layout_gravity="start"
+        app:showAsAction="ifRoom"/>
 
 </menu>

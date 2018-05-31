@@ -9,18 +9,16 @@ import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.PopupMenu
-import android.widget.TextView
 import android.widget.Toast
 import com.arsy.maps_library.MapRadar
 import com.beust.klaxon.Klaxon
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -32,6 +30,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import okhttp3.*
+import java.io.File
 import java.io.IOException
 
 
@@ -42,23 +41,32 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var backPressed: Long = 0
     lateinit var mAdView : AdView
-    val ipAdress: String = "192.168.1.40"
+    val ipAdress: String = "192.168.1.34"
+    private lateinit var lastLocation: Location
+    var listOfMarkers = mutableMapOf<String, Marker>()
+    var lightersLatLngList = mutableMapOf<String, LatLng>()
+    var isCameraMove = false
+    lateinit var mapRadar : MapRadar
+    val mHandler3 = Handler()
+    val mHandler = Handler(Looper.getMainLooper())
+    var switchHaveValue: Boolean = false
+    lateinit var googleAccount: GoogleSignInAccount
+
+    var isRunInBackground : Boolean = false
+
+    var isMenuLoaded = false
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_maps)
+        setContentView(R.layout.activity_map)
 
-        val accountDisplayName: String = intent.getStringExtra("accountDisplayName")
-        findViewById<TextView>(R.id.mapTextView).setText("Let's get a light $accountDisplayName")
+        initializeSettings()
 
-        val clickListener = View.OnClickListener { view ->
-            when (view.id) {
-                R.id.buttonMenu -> {
-                    showPopup(view)
-                }
-            }
-        }
-        findViewById<ImageButton>(R.id.buttonMenu).setOnClickListener(clickListener)
+        setSupportActionBar(findViewById(R.id.my_toolbar))
+
+        googleAccount = intent.getParcelableExtra("googleAccount")
+        supportActionBar!!.setDisplayShowTitleEnabled(false)
 
         MobileAds.initialize(this, "ca-app-pub-3096868502930398~4354694161")
         mAdView = findViewById(R.id.adView)
@@ -70,67 +78,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         mapFragment.getMapAsync(this)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-    }
 
-    private lateinit var lastLocation: Location
+    }
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         map.getUiSettings().setZoomControlsEnabled(true)
         map.setOnMarkerClickListener(this)
 
+        mapRadar = MapRadar(map, LatLng(0.0, 0.0), this)
+        mapRadar.withDistance(700)
+        mapRadar.withOuterCircleStrokeColor(0xfccd29)
+        mapRadar.withRadarColors(0x00fccd29, Color.parseColor("#F45500"))
+        mapRadar.startRadarAnimation()
+
         setUpMap()
 
-        val client = OkHttpClient()
-        val mHandler = Handler(Looper.getMainLooper())
-        val mMapView: ViewGroup = findViewById(R.id.mapLayout);
-
-        val port = "5000"
-        val accountId: String = intent.getStringExtra("accountId")
-        val route = "/get_lighters_latlng?userId=" + accountId
-        val url = "http://" + ipAdress + ":" + port + route
-
-        val request = Request.Builder()
-                .url(url)
-                .build()
-
-        var lightersLatLng = listOf<LatLng>()
-
-        Handler().postDelayed({
-            // This method will be executed once the timer is over
-            client.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
+        lateinit var runS : Runnable
+        runS = Runnable {
+            run() {
+                setUpMap()
+                showingOtherLighters()
+                if(true){
+                    mHandler3.postDelayed(runS, 5000)
                 }
-
-                override fun onResponse(call: Call, response: Response) {
-                    if (response.isSuccessful()) {
-                        val json1 = response.body()!!.string()
-                        println(json1)
-                        class DataSon(val lat: Double, val lng: Double)
-                        class Data(val lighters_latlng: Array<DataSon>)
-                        val json2 = Klaxon().parse<Data>(json1)
-                        for (item2 in json2!!.lighters_latlng) {
-                            val lat: Double = item2.lat
-                            val lng: Double = item2.lng
-                            val latlng = LatLng(lat, lng)
-                            println(latlng.toString())
-                            lightersLatLng += latlng
-                        }
-
-                        mHandler.post(Runnable() {
-                            run() {
-                                for (latlng in lightersLatLng) {
-                                    googleMap.addMarker(MarkerOptions().position(latlng)
-                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
-                                }
-                                mMapView.invalidate()
-                            }
-                        })
-                    }
-                }
-            })
-            client.dispatcher().executorService().shutdown()
-        }, 5000)
+            }
+        }
+        mHandler3.post(runS)
     }
 
     private fun setUpMap() {
@@ -145,7 +119,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             if (location != null) {
                 lastLocation = location
                 val currentLatLng = LatLng(location.latitude, location.longitude)
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 16f))
+                if(!isCameraMove) {
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 16f))
+                    isCameraMove = true
+                }
 
                 val client = OkHttpClient()
 
@@ -154,10 +131,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 val url = "http://" + ipAdress + ":" + port + route
                 val currentLat: Double = currentLatLng.latitude
                 val currentLng: Double = currentLatLng.longitude
-                val accountId: String = intent.getStringExtra("accountId")
+
                 val json = """
-                    {"lat":${currentLat},"lng":${currentLng},"accountId":"${accountId}"}
-                    """.trimIndent()
+                    {"lat":${currentLat},"lng":${currentLng},"googleAccountId":"${googleAccount.id}","hasLighter":${switchHaveValue}
+                    }""".trimIndent()
                 val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json)
                 val request = Request.Builder()
                         .url(url)
@@ -182,25 +159,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 //                        .strokeWidth(2.0F)
 //                map.addCircle(circleOptions)
 
-                val mapRadar = MapRadar(map, currentLatLng, this)
-                mapRadar.withDistance(700)
-                mapRadar.withOuterCircleStrokeColor(0xfccd29)
-                mapRadar.withRadarColors(0x00fccd29, Color.parseColor("#F45500"))
-                mapRadar.startRadarAnimation()      //in onMapReadyCallBack
+                mapRadar.withLatLng(currentLatLng)
             }
         }
     }
 
-    companion object {
-        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
-    }
-
     override fun onBackPressed() {
         if (backPressed + 2000 > System.currentTimeMillis()) {
-            val intent: Intent = Intent(applicationContext, MainActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-            intent.putExtra("EXIT", true)
-            startActivity(intent)
+            val intentMain: Intent = Intent(applicationContext, MainActivity::class.java)
+            intentMain.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            intentMain.putExtra("EXIT", true)
+
+            mHandler3.removeCallbacksAndMessages(null)
+            mHandler.removeCallbacksAndMessages(null)
+
+            startActivity(intentMain)
         }
         else {
             Toast.makeText(baseContext, "Press once again to exit", Toast.LENGTH_SHORT).show()
@@ -208,24 +181,133 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         backPressed = System.currentTimeMillis()
     }
 
-    private fun showPopup(view: View) {
-        var popup: PopupMenu? = null;
-        popup = PopupMenu(this, view)
-        popup.inflate(R.menu.menu_map)
-        popup.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener { item: MenuItem? ->
-            when (item!!.itemId) {
-                R.id.header1 -> {
-                    Toast.makeText(this@MapsActivity, item.title, Toast.LENGTH_SHORT).show();
-                }
-                R.id.header2 -> {
-                    Toast.makeText(this@MapsActivity, item.title, Toast.LENGTH_SHORT).show();
-                }
-                R.id.header3 -> {
-                    Toast.makeText(this@MapsActivity, item.title, Toast.LENGTH_SHORT).show();
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.action_settings -> {
+            val intentSettings = Intent(this, SettingsActivity::class.java)
+            intentSettings.putExtra("googleAccount", googleAccount)
+            startActivity(intentSettings)
+            true
+        }
+
+        R.id.action_profile -> {
+            val intentProfile = Intent(this, ProfileActivity::class.java)
+            intentProfile.putExtra("googleAccount", googleAccount)
+            startActivity(intentProfile)
+            true
+        }
+
+        else -> {
+            // If we got here, the user's action was not recognized.
+            // Invoke the superclass to handle it.
+            super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        if ( ! isMenuLoaded){
+            menuInflater.inflate(R.menu.menu_map, menu)
+            isMenuLoaded = true
+            return super.onCreateOptionsMenu(menu)
+        }
+        return true
+    }
+
+    fun showingOtherLighters() {
+        val listMarkersToDelete = mutableListOf<String>()
+
+        val mMapView: ViewGroup = findViewById(R.id.mapLayout);
+        val client = OkHttpClient()
+
+        val port = "5000"
+        val route = "/get_lighters_latlng?googleAccountId=" + googleAccount.id
+        val url = "http://" + ipAdress + ":" + port + route
+
+        val request = Request.Builder()
+                .url(url)
+                .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful()) {
+                    val json1 = response.body()!!.string()
+                    lightersLatLngList.clear()
+                    class DataSon(val lat: Double, val lng: Double, val user_id: String)
+                    class Data(val lighters_latlng: Array<DataSon>)
+                    val json2 = Klaxon().parse<Data>(json1)
+                    for (item2 in json2!!.lighters_latlng) {
+                        val lat: Double = item2.lat
+                        val lng: Double = item2.lng
+                        val userId: String = item2.user_id
+                        val latlng = LatLng(lat, lng)
+                        lightersLatLngList[userId] = latlng
+                    }
+
+                    mHandler.post(Runnable() {
+                        run() {
+                            for (latlng in lightersLatLngList) {
+                                if (!listOfMarkers.containsKey(latlng.key)) {
+                                    val marker: Marker =  map.addMarker(MarkerOptions().position(latlng.value)
+                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
+                                    listOfMarkers[latlng.key] = marker
+                                }
+                                else {
+                                if (listOfMarkers[latlng.key]!!.position != latlng.value) {
+                                    listOfMarkers[latlng.key]!!.remove()
+                                    val marker: Marker =  map.addMarker(MarkerOptions()
+                                            .position(latlng.value)
+                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
+
+                                    listOfMarkers[latlng.key] = marker
+                                    }
+
+                                }
+                            }
+                            listMarkersToDelete.clear()
+                            for (marker in listOfMarkers) {
+                                if (marker.key !in lightersLatLngList.keys) {
+                                    marker.value.remove()
+                                    listMarkersToDelete.add(marker.key)
+                                }
+                            }
+                            for (marker_key in listMarkersToDelete) {
+                                listOfMarkers.remove(marker_key)
+                            }
+                            mMapView.invalidate()
+                        }
+                    })
                 }
             }
-            true
         })
-        popup.show()
+        client.dispatcher().executorService().shutdown()
+    }
+
+    fun initializeSettings() {
+        val file = File(applicationContext.filesDir, "conf.txt")
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+        val confText = file.readText()
+        if (confText.length == 0){
+            file.printWriter().use { out ->
+                out.print("{\"is_run_in_background\":false}")
+            }
+            isRunInBackground = false
+        }
+        else {
+            class ConfData(var is_run_in_background: Boolean)
+            val confObj = Klaxon().parse<ConfData>(confText)
+            if (confObj != null) {
+                isRunInBackground = confObj.is_run_in_background
+            }
+        }
+
+
+    }
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
 }

@@ -6,4 +6,7 @@
     <string name="Settings">Settings</string>
     <string name="Rate_Us">Rate Us</string>
     <string name="About">About</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="action_favorite">string</string>
+    <string name="action_settings">string</string>
 </resources>
