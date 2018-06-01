@@ -2,6 +2,7 @@ package com.example.idan.lightmeup
 
 import android.graphics.Typeface
 import android.os.Bundle
+import android.support.constraint.ConstraintLayout
 import android.support.v7.app.AppCompatActivity
 import android.widget.Switch
 import android.widget.TextView
@@ -15,6 +16,7 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         val tx = findViewById(R.id.headline) as TextView
+
         val custom_font = Typeface.createFromAsset(assets, "fonts/font1.ttf")
         tx.typeface = custom_font
 
@@ -37,5 +39,10 @@ class SettingsActivity : AppCompatActivity() {
                 out.print(Klaxon().toJsonString(confObj))
             }
         }
+
+        val settingsLayout = findViewById<ConstraintLayout>(R.id.settingsLayout)
+
+
+
     }
 }
