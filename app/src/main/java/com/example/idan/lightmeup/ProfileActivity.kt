@@ -12,19 +12,23 @@ import java.net.URL
 
 class ProfileActivity : AppCompatActivity() {
 
+    lateinit var googleAccount: GoogleSignInAccount
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        val googleAccount: GoogleSignInAccount = intent.getParcelableExtra("googleAccount")
+        googleAccount = intent.getParcelableExtra("googleAccount")
+
+        var lightGive = intent.getIntExtra("lightGive", -1)
+        var lightGet = intent.getIntExtra("lightGet", -1)
+        var lightGift = intent.getIntExtra("lightGift", -1)
 
         val custom_font = Typeface.createFromAsset(assets, "fonts/font1.ttf")
 
         val profileImage = findViewById<ImageView>(R.id.profileImage)
-        val name = findViewById<TextView>(R.id.name)
+        val dName = findViewById<TextView>(R.id.dName)
         val email = findViewById<TextView>(R.id.email)
-
-        name.typeface = custom_font
 
         if (googleAccount.photoUrl != null) {
             val url = URL(googleAccount.photoUrl.toString())
@@ -32,10 +36,15 @@ class ProfileActivity : AppCompatActivity() {
             profileImage.setImageBitmap(bmp)
         }
 
+        dName.text = googleAccount.displayName
+        email.text = googleAccount.email
 
-        name.setText(googleAccount.displayName)
-        email.setText(googleAccount.email)
+        val getLightView = findViewById<TextView>(R.id.getLightView)
+        val giveLightView = findViewById<TextView>(R.id.giveLightView)
+        val giftLightView = findViewById<TextView>(R.id.giftLightView)
 
+        getLightView.text = "Lights You Get: " + lightGive.toString()
+        giveLightView.text = "Lights You Give: " + lightGet.toString()
+        giftLightView.text = "Gifted Lights: " + lightGift.toString()
     }
-
 }

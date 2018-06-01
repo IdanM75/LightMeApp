@@ -11,7 +11,9 @@ import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.view.ViewGroup
+import android.widget.Switch
 import android.widget.Toast
 import com.arsy.maps_library.MapRadar
 import com.beust.klaxon.Klaxon
@@ -41,7 +43,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var backPressed: Long = 0
     lateinit var mAdView : AdView
-    val ipAdress: String = "192.168.1.34"
+    val ipAddress: String = "192.168.1.34"
     private lateinit var lastLocation: Location
     var listOfMarkers = mutableMapOf<String, Marker>()
     var lightersLatLngList = mutableMapOf<String, LatLng>()
@@ -51,10 +53,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     val mHandler = Handler(Looper.getMainLooper())
     var switchHaveValue: Boolean = false
     lateinit var googleAccount: GoogleSignInAccount
-
     var isRunInBackground : Boolean = false
-
     var isMenuLoaded = false
+
+    var lightGive : Int = -1
+    var lightGet : Int = -1
+    var lightGift : Int = -1
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +73,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         googleAccount = intent.getParcelableExtra("googleAccount")
         supportActionBar!!.setDisplayShowTitleEnabled(false)
 
+        initializeProfile()
+
         MobileAds.initialize(this, "ca-app-pub-3096868502930398~4354694161")
         mAdView = findViewById(R.id.adView)
         val adRequest = AdRequest.Builder().build()
@@ -79,6 +86,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        val switchView = findViewById<Switch>(R.id.switchHave)
+        switchView.setOnClickListener(View.OnClickListener {
+            switchHaveValue = switchView.isChecked
+        })
+
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -87,7 +99,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         map.setOnMarkerClickListener(this)
 
         mapRadar = MapRadar(map, LatLng(0.0, 0.0), this)
-        mapRadar.withDistance(700)
+        mapRadar.withDistance(800)
         mapRadar.withOuterCircleStrokeColor(0xfccd29)
         mapRadar.withRadarColors(0x00fccd29, Color.parseColor("#F45500"))
         mapRadar.startRadarAnimation()
@@ -128,7 +140,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
                 val port = "5000"
                 val route = "/my_location"
-                val url = "http://" + ipAdress + ":" + port + route
+                val url = "http://" + ipAddress + ":" + port + route
                 val currentLat: Double = currentLatLng.latitude
                 val currentLng: Double = currentLatLng.longitude
 
@@ -151,13 +163,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     }
                 })
                 client.dispatcher().executorService().shutdown()
-
-//                val circleOptions = CircleOptions()
-//                        .center(currentLatLng)
-//                        .radius(600.0)
-//                        .strokeColor(Color.BLACK)
-//                        .strokeWidth(2.0F)
-//                map.addCircle(circleOptions)
 
                 mapRadar.withLatLng(currentLatLng)
             }
@@ -192,13 +197,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         R.id.action_profile -> {
             val intentProfile = Intent(this, ProfileActivity::class.java)
             intentProfile.putExtra("googleAccount", googleAccount)
+            intentProfile.putExtra("lightGive", lightGive)
+            intentProfile.putExtra("lightGet", lightGet)
+            intentProfile.putExtra("lightGift", lightGift)
             startActivity(intentProfile)
             true
         }
 
         else -> {
-            // If we got here, the user's action was not recognized.
-            // Invoke the superclass to handle it.
             super.onOptionsItemSelected(item)
         }
     }
@@ -220,7 +226,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
         val port = "5000"
         val route = "/get_lighters_latlng?googleAccountId=" + googleAccount.id
-        val url = "http://" + ipAdress + ":" + port + route
+        val url = "http://" + ipAddress + ":" + port + route
 
         val request = Request.Builder()
                 .url(url)
@@ -250,7 +256,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             for (latlng in lightersLatLngList) {
                                 if (!listOfMarkers.containsKey(latlng.key)) {
                                     val marker: Marker =  map.addMarker(MarkerOptions().position(latlng.value)
-                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
+                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter)))
                                     listOfMarkers[latlng.key] = marker
                                 }
                                 else {
@@ -258,7 +264,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                                     listOfMarkers[latlng.key]!!.remove()
                                     val marker: Marker =  map.addMarker(MarkerOptions()
                                             .position(latlng.value)
-                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter_on_map)))
+                                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter)))
 
                                     listOfMarkers[latlng.key] = marker
                                     }
@@ -303,8 +309,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 isRunInBackground = confObj.is_run_in_background
             }
         }
+    }
 
+    fun initializeProfile() {
+        val client = OkHttpClient()
 
+        val port = "5000"
+        val route = "/initialize_profile?googleAccountId=" + googleAccount.id
+        val url = "http://" + ipAddress + ":" + port + route
+
+        val request = Request.Builder()
+                .url(url)
+                .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful()) {
+                    val responseString = response.body()!!.string()
+                    println("ddddddddd " + responseString)
+                    class Profile(val get_light: Int, val give_light: Int, val gift_light: Int)
+                    val myProfile = Klaxon().parse<Profile>(responseString)!!
+                    lightGet = myProfile.get_light
+                    lightGive = myProfile.give_light
+                    lightGift = myProfile.gift_light
+                }
+            }
+        })
+        client.dispatcher().executorService().shutdown()
     }
 
     companion object {
