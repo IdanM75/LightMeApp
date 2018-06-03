@@ -12,27 +12,28 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.beust.klaxon.Klaxon
 import com.google.android.gms.auth.api.Auth
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.auth.api.signin.GoogleSignInResult
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.GoogleApiClient
-
-
-
-
+import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
 
     val RC_SIGN_IN: Int = 9000
+    var phoneNum: String = "-2"
 
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+
 
         if (getIntent().getBooleanExtra("EXIT", false)) {
             finish()
@@ -79,8 +80,30 @@ class MainActivity : AppCompatActivity() {
             val googleResult: GoogleSignInResult = Auth.GoogleSignInApi.getSignInResultFromIntent(data)
             if (googleResult.isSuccess) {
                 val googleAccount: GoogleSignInAccount = googleResult.signInAccount!!
+
+                val file = File(applicationContext.filesDir, "phone.txt")
+                if (!file.exists()) {
+                    file.createNewFile()
+                }
+                val phoneText = file.readText()
+                if (phoneText.length == 0){
+                    file.printWriter().use { out ->
+                        out.print("{\"is_run_in_background\":\"false\"}")
+                    }
+//                    isRunInBackground = false
+                }
+                else {
+                    class phoneData(var phoneNumI: String)
+                    val confObj = Klaxon().parse<phoneData>(phoneText)
+                    if (confObj != null) {
+                        phoneNum = confObj.phoneNumI
+                    }
+                }
+
+                phoneNum = "972525787016"
                 val intent = Intent(this, MapsActivity::class.java)
                 intent.putExtra("googleAccount", googleAccount)
+                intent.putExtra("phoneNum", phoneNum)
                 startActivity(intent)
             }
         }

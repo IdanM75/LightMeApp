@@ -5,19 +5,28 @@
     android:layout_gravity="start"
     >
 
+    <!--<item-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:layout_alignParentRight="true"-->
+        <!--android:id="@+id/action_profile"-->
+        <!--android:title="action_profile"-->
+        <!--android:icon="@drawable/person"-->
+        <!--android:layout_gravity="start"-->
+        <!--app:showAsAction="ifRoom"/>-->
+
     <item
         android:layout_alignParentStart="true"
         android:layout_alignParentRight="true"
-        android:id="@+id/action_profile"
-        android:title="action_profile"
-        android:icon="@drawable/person"
+        android:id="@+id/action_info"
+        android:title="@string/credits"
+        android:icon="@drawable/info"
         android:layout_gravity="start"
         app:showAsAction="ifRoom"/>
 
     <item android:id="@+id/action_settings"
         android:layout_alignParentStart="true"
         android:layout_alignParentRight="true"
-        android:title="action_settings"
+        android:title="@string/settings"
         android:icon="@drawable/settings"
         android:layout_gravity="start"
         app:showAsAction="ifRoom"/>

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -36,7 +37,7 @@ import java.io.File
 import java.io.IOException
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener {
     override fun onMarkerClick(p0: Marker?) = false
 
     private lateinit var map: GoogleMap
@@ -47,6 +48,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var lastLocation: Location
     var listOfMarkers = mutableMapOf<String, Marker>()
     var lightersLatLngList = mutableMapOf<String, LatLng>()
+    var lightersNamesList = mutableMapOf<String, String>()
+    var lightersEmailsList = mutableMapOf<String, String>()
     var isCameraMove = false
     lateinit var mapRadar : MapRadar
     val mHandler3 = Handler()
@@ -56,11 +59,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     var isRunInBackground : Boolean = false
     var isMenuLoaded = false
 
+    lateinit var phoneNum : String
+
     var lightGive : Int = -1
     var lightGet : Int = -1
     var lightGift : Int = -1
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +75,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
         googleAccount = intent.getParcelableExtra("googleAccount")
         supportActionBar!!.setDisplayShowTitleEnabled(false)
+
+        phoneNum = intent.getStringExtra("phoneNum")
 
         initializeProfile()
 
@@ -97,6 +102,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         map = googleMap
         map.getUiSettings().setZoomControlsEnabled(true)
         map.setOnMarkerClickListener(this)
+        map.setOnInfoWindowClickListener(this)
 
         mapRadar = MapRadar(map, LatLng(0.0, 0.0), this)
         mapRadar.withDistance(800)
@@ -194,15 +200,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             true
         }
 
-        R.id.action_profile -> {
-            val intentProfile = Intent(this, ProfileActivity::class.java)
-            intentProfile.putExtra("googleAccount", googleAccount)
-            intentProfile.putExtra("lightGive", lightGive)
-            intentProfile.putExtra("lightGet", lightGet)
-            intentProfile.putExtra("lightGift", lightGift)
-            startActivity(intentProfile)
+        R.id.action_info -> {
+            val intentInfo = Intent(this, InfoActivity::class.java)
+            intentInfo.putExtra("googleAccount", googleAccount)
+            startActivity(intentInfo)
             true
         }
+
+//        R.id.action_profile -> {
+//            val intentProfile = Intent(this, ProfileActivity::class.java)
+//            intentProfile.putExtra("googleAccount", googleAccount)
+//            intentProfile.putExtra("lightGive", lightGive)
+//            intentProfile.putExtra("lightGet", lightGet)
+//            intentProfile.putExtra("lightGift", lightGift)
+//            startActivity(intentProfile)
+//            true
+//        }
 
         else -> {
             super.onOptionsItemSelected(item)
@@ -240,7 +253,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 if (response.isSuccessful()) {
                     val json1 = response.body()!!.string()
                     lightersLatLngList.clear()
-                    class DataSon(val lat: Double, val lng: Double, val user_id: String)
+                    class DataSon(val lat: Double, val lng: Double, val user_id: String, val name: String, val email: String)
                     class Data(val lighters_latlng: Array<DataSon>)
                     val json2 = Klaxon().parse<Data>(json1)
                     for (item2 in json2!!.lighters_latlng) {
@@ -249,14 +262,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                         val userId: String = item2.user_id
                         val latlng = LatLng(lat, lng)
                         lightersLatLngList[userId] = latlng
+                        lightersNamesList[userId] = item2.name
+                        lightersEmailsList[userId] = item2.email
                     }
 
                     mHandler.post(Runnable() {
                         run() {
                             for (latlng in lightersLatLngList) {
                                 if (!listOfMarkers.containsKey(latlng.key)) {
-                                    val marker: Marker =  map.addMarker(MarkerOptions().position(latlng.value)
+                                    val marker: Marker =  map.addMarker(MarkerOptions()
+                                            .position(latlng.value)
+                                            .title(lightersNamesList[latlng.key])
+                                            .snippet(lightersEmailsList[latlng.key])
                                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter)))
+//                                    marker.showInfoWindow()
                                     listOfMarkers[latlng.key] = marker
                                 }
                                 else {
@@ -264,8 +283,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                                     listOfMarkers[latlng.key]!!.remove()
                                     val marker: Marker =  map.addMarker(MarkerOptions()
                                             .position(latlng.value)
+                                            .title(lightersNamesList[latlng.key])
+                                            .snippet(lightersEmailsList[latlng.key])
                                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter)))
-
+//                                    marker.showInfoWindow()
                                     listOfMarkers[latlng.key] = marker
                                     }
 
@@ -329,7 +350,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful()) {
                     val responseString = response.body()!!.string()
-                    println("ddddddddd " + responseString)
                     class Profile(val get_light: Int, val give_light: Int, val gift_light: Int)
                     val myProfile = Klaxon().parse<Profile>(responseString)!!
                     lightGet = myProfile.get_light
@@ -339,6 +359,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             }
         })
         client.dispatcher().executorService().shutdown()
+    }
+
+    override fun onInfoWindowClick(marker: Marker) {
+//        Toast.makeText(this, "Info window clicked",
+//                Toast.LENGTH_SHORT).show()
+
+        val uri = Uri.parse("smsto:${phoneNum}")
+        val i = Intent(Intent.ACTION_SENDTO, uri)
+        i.`package` = "com.whatsapp"
+        startActivity(Intent.createChooser(i, ""))
     }
 
     companion object {

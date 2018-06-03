@@ -18,22 +18,6 @@
         android:layout_marginBottom="50dp"
         tools:context=".MapsActivity" />
 
-
-
-    <!--<ImageButton-->
-    <!--android:id="@+id/buttonMenu"-->
-    <!--android:layout_width="50dp"-->
-    <!--android:layout_height="50dp"-->
-    <!--android:layout_alignParentEnd="true"-->
-    <!--android:layout_alignParentRight="true"-->
-    <!--android:layout_gravity="right"-->
-    <!--android:background="@android:color/transparent"-->
-    <!--android:contentDescription="@string/menu"-->
-    <!--android:cropToPadding="true"-->
-    <!--android:padding="0dp"-->
-    <!--ads:srcCompat="@android:drawable/ic_dialog_dialer" />-->
-    <!--</android.support.v7.widget.Toolbar>-->
-
     <android.support.v7.widget.Toolbar
         android:id="@+id/my_toolbar"
         android:layout_width="match_parent"
@@ -44,15 +28,25 @@
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
+        <TextView
+            android:id="@+id/qHave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_gravity="start"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            android:textSize="16sp"
+            android:text="Have A light? " />
+
         <Switch
             android:id="@+id/switchHave"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
-            android:layout_gravity="left"
+            android:layout_gravity="start"
             android:checked="false"
-            android:text=" Have a lighter?  "
             android:textAppearance="@style/TextAppearance.AppCompat.Body2"
             android:textSize="16sp"
             tools:checked="false" />
@@ -70,6 +64,5 @@
         ads:adUnitId="ca-app-pub-3940256099942544/6300978111">
         <!--need to change unit id-->
     </com.google.android.gms.ads.AdView>
-
 
 </RelativeLayout>
