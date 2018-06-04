@@ -1,5 +1,6 @@
 package com.example.idan.lightmeup
 
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -49,7 +50,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     var listOfMarkers = mutableMapOf<String, Marker>()
     var lightersLatLngList = mutableMapOf<String, LatLng>()
     var lightersNamesList = mutableMapOf<String, String>()
-    var lightersEmailsList = mutableMapOf<String, String>()
+    var lightersTimeList = mutableMapOf<String, String>()
+    var lightersPhoneList = mutableMapOf<String, String>()
     var isCameraMove = false
     lateinit var mapRadar : MapRadar
     val mHandler3 = Handler()
@@ -107,7 +109,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         mapRadar = MapRadar(map, LatLng(0.0, 0.0), this)
         mapRadar.withDistance(800)
         mapRadar.withOuterCircleStrokeColor(0xfccd29)
-        mapRadar.withRadarColors(0x00fccd29, Color.parseColor("#F45500"))
+        mapRadar.withRadarColors(0x00fccd29, Color.parseColor("#EB3737"))
         mapRadar.startRadarAnimation()
 
         setUpMap()
@@ -196,7 +198,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         R.id.action_settings -> {
             val intentSettings = Intent(this, SettingsActivity::class.java)
             intentSettings.putExtra("googleAccount", googleAccount)
-            startActivity(intentSettings)
+            startActivityForResult(intentSettings, 1)
             true
         }
 
@@ -253,7 +255,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 if (response.isSuccessful()) {
                     val json1 = response.body()!!.string()
                     lightersLatLngList.clear()
-                    class DataSon(val lat: Double, val lng: Double, val user_id: String, val name: String, val email: String)
+                    class DataSon(val lat: Double, val lng: Double, val user_id: String, val name: String, val time: String, val phone: String)
                     class Data(val lighters_latlng: Array<DataSon>)
                     val json2 = Klaxon().parse<Data>(json1)
                     for (item2 in json2!!.lighters_latlng) {
@@ -263,7 +265,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                         val latlng = LatLng(lat, lng)
                         lightersLatLngList[userId] = latlng
                         lightersNamesList[userId] = item2.name
-                        lightersEmailsList[userId] = item2.email
+                        lightersTimeList[userId] = item2.time
+                        lightersPhoneList[userId] = item2.phone
                     }
 
                     mHandler.post(Runnable() {
@@ -273,9 +276,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                                     val marker: Marker =  map.addMarker(MarkerOptions()
                                             .position(latlng.value)
                                             .title(lightersNamesList[latlng.key])
-                                            .snippet(lightersEmailsList[latlng.key])
+                                            .snippet("Last seen: " + lightersTimeList[latlng.key] + ", Phone number: +" + lightersPhoneList[latlng.key])
                                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter)))
-//                                    marker.showInfoWindow()
                                     listOfMarkers[latlng.key] = marker
                                 }
                                 else {
@@ -284,9 +286,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                                     val marker: Marker =  map.addMarker(MarkerOptions()
                                             .position(latlng.value)
                                             .title(lightersNamesList[latlng.key])
-                                            .snippet(lightersEmailsList[latlng.key])
+                                            .snippet("Last seen: " + lightersTimeList[latlng.key] + ", Phone number: +" + lightersPhoneList[latlng.key])
                                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.lighter)))
-//                                    marker.showInfoWindow()
                                     listOfMarkers[latlng.key] = marker
                                     }
 
@@ -336,11 +337,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val client = OkHttpClient()
 
         val port = "5000"
-        val route = "/initialize_profile?googleAccountId=" + googleAccount.id
+        val route = "/initialize_profile"
         val url = "http://" + ipAddress + ":" + port + route
 
+        val json = """
+                    {"phoneNum":${phoneNum},"isRunInBackground":${isRunInBackground},"googleAccountId":"${googleAccount.id}","googleAccountName":"${googleAccount.displayName}"
+                    }""".trimIndent()
+        val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json)
         val request = Request.Builder()
                 .url(url)
+                .post(body)
                 .build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -349,12 +355,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
             override fun onResponse(call: Call, response: Response) {
                 if (response.isSuccessful()) {
-                    val responseString = response.body()!!.string()
-                    class Profile(val get_light: Int, val give_light: Int, val gift_light: Int)
-                    val myProfile = Klaxon().parse<Profile>(responseString)!!
-                    lightGet = myProfile.get_light
-                    lightGive = myProfile.give_light
-                    lightGift = myProfile.gift_light
                 }
             }
         })
@@ -362,13 +362,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     }
 
     override fun onInfoWindowClick(marker: Marker) {
-//        Toast.makeText(this, "Info window clicked",
-//                Toast.LENGTH_SHORT).show()
-
-        val uri = Uri.parse("smsto:${phoneNum}")
+        val phoneNumberTo = marker.snippet.split("Phone number: +")[1]
+        val uri = Uri.parse("smsto:${phoneNumberTo}")
         val i = Intent(Intent.ACTION_SENDTO, uri)
         i.`package` = "com.whatsapp"
         startActivity(Intent.createChooser(i, ""))
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1) {
+            if (resultCode == Activity.RESULT_OK) {
+                if (data != null) {
+                    phoneNum = data.getStringExtra("myPhone")
+                    isRunInBackground = data.getBooleanExtra("isRunInBackground", false)
+                    initializeProfile()
+                }
+            }
+        }
     }
 
     companion object {
