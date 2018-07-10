@@ -5,8 +5,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ProfileActivity"
-    android:background="?attr/colorPrimary"
     >
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/lightwallpaper"
+            android:scaleType = "centerCrop"
+            android:tint="#b4000000"
+            >
+        </ImageView>
+    </FrameLayout>
 
     <ImageView
         android:id="@+id/profileImage"
@@ -32,7 +46,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="190dp"
         android:text="@string/error"
-        android:textColor="@android:color/background_dark"
+        android:textColor="#FFE0E0E0"
         android:textSize="40sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -48,7 +62,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="260dp"
         android:text="@string/error"
-        android:textColor="#606060"
+        android:textColor="#FFE0E0E0"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -63,7 +77,7 @@
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="254dp"
-        android:background="#474747"
+        android:background="#FFE0E0E0"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -78,7 +92,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="320dp"
         android:text="@string/error"
-        android:textColor="@android:color/background_dark"
+        android:textColor="#FFE0E0E0"
         android:textSize="22sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -94,7 +108,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="360dp"
         android:text="@string/error"
-        android:textColor="@android:color/background_dark"
+        android:textColor="#FFE0E0E0"
         android:textSize="22sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -110,7 +124,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="400dp"
         android:text="@string/error"
-        android:textColor="@android:color/background_dark"
+        android:textColor="#FFE0E0E0"
         android:textSize="22sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

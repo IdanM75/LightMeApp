@@ -3,6 +3,7 @@ package com.example.idan.lightmeup
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.graphics.Color
 import android.location.Location
 import android.net.Uri
@@ -11,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -29,10 +31,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import okhttp3.*
 import java.io.File
 import java.io.IOException
@@ -45,7 +44,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var backPressed: Long = 0
     lateinit var mAdView : AdView
-    val ipAddress: String = "192.168.1.34"
+    val ipAddress: String = "192.168.43.135"
     private lateinit var lastLocation: Location
     var listOfMarkers = mutableMapOf<String, Marker>()
     var lightersLatLngList = mutableMapOf<String, LatLng>()
@@ -62,10 +61,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     var isMenuLoaded = false
 
     lateinit var phoneNum : String
-
-    var lightGive : Int = -1
-    var lightGet : Int = -1
-    var lightGift : Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +97,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            val success : Boolean = map.setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(
+                            this, R.raw.style_json))
+        } catch (e : Resources.NotFoundException) {
+            Log.e("MapsActivityRaw", "Can't find style.", e)
+        }
+
         map.getUiSettings().setZoomControlsEnabled(true)
         map.setOnMarkerClickListener(this)
         map.setOnInfoWindowClickListener(this)
@@ -212,9 +218,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 //        R.id.action_profile -> {
 //            val intentProfile = Intent(this, ProfileActivity::class.java)
 //            intentProfile.putExtra("googleAccount", googleAccount)
-//            intentProfile.putExtra("lightGive", lightGive)
-//            intentProfile.putExtra("lightGet", lightGet)
-//            intentProfile.putExtra("lightGift", lightGift)
 //            startActivity(intentProfile)
 //            true
 //        }
@@ -341,7 +344,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val url = "http://" + ipAddress + ":" + port + route
 
         val json = """
-                    {"phoneNum":${phoneNum},"isRunInBackground":${isRunInBackground},"googleAccountId":"${googleAccount.id}","googleAccountName":"${googleAccount.displayName}"
+                    {"phoneNum":"${phoneNum}","isRunInBackground":${isRunInBackground},"googleAccountId":"${googleAccount.id}","googleAccountName":"${googleAccount.displayName}"
                     }""".trimIndent()
         val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json)
         val request = Request.Builder()

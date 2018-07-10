@@ -1,7 +1,6 @@
 package com.example.idan.lightmeup
 
 import android.graphics.BitmapFactory
-import android.graphics.Typeface
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.widget.ImageView
@@ -13,18 +12,15 @@ import java.net.URL
 class ProfileActivity : AppCompatActivity() {
 
     lateinit var googleAccount: GoogleSignInAccount
+    var lightGive: Int = -1
+    var lightGet: Int = -1
+    var lightGift: Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
         googleAccount = intent.getParcelableExtra("googleAccount")
-
-        var lightGive = intent.getIntExtra("lightGive", -1)
-        var lightGet = intent.getIntExtra("lightGet", -1)
-        var lightGift = intent.getIntExtra("lightGift", -1)
-
-        val custom_font = Typeface.createFromAsset(assets, "fonts/font1.ttf")
 
         val profileImage = findViewById<ImageView>(R.id.profileImage)
         val dName = findViewById<TextView>(R.id.dName)

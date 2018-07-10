@@ -4,8 +4,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".InfoActivity"
-    android:background="@color/colorPrimary">
+    tools:context=".InfoActivity">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/lightwallpaper"
+            android:scaleType = "centerCrop"
+            android:tint="#b4000000"
+            >
+        </ImageView>
+    </FrameLayout>
 
     <TextView
         android:id="@+id/aboutUsTitleText"
@@ -19,6 +33,7 @@
         android:gravity="center"
         android:text="@string/about_us"
         android:textSize="22sp"
+        android:textColor="#FFE0E0E0"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -36,6 +51,7 @@
         android:gravity="center"
         android:text="@string/about_us_na_group_of_stoned_pepole_nthat_needed_a_lighter_nwhile_camping_in_the_beach_nthat_s_it_nsomehow_we_wrote_this_app"
         android:textSize="20sp"
+        android:textColor="#FFE0E0E0"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -48,7 +64,7 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
-        android:background="@color/common_google_signin_btn_text_dark_focused"
+        android:background="#FFE0E0E0"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -65,6 +81,7 @@
         android:gravity="center"
         android:text="@string/credits"
         android:textSize="22sp"
+        android:textColor="#FFE0E0E0"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -80,6 +97,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="245dp"
         android:gravity="center"
+        android:textColor="#FFE0E0E0"
         android:text="@string/videos_from_youtube_slow_mo_lab_n_icon_of_the_app_www_flaticon_com"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -89,12 +107,12 @@
     <View
         android:layout_width="320dp"
         android:layout_height="1dp"
-        android:layout_marginTop="330dp"
+        android:layout_marginTop="350dp"
         android:layout_marginEnd="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
-        android:background="@color/common_google_signin_btn_text_dark_focused"
+        android:background="#FFE0E0E0"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -104,7 +122,7 @@
         style="@android:style/Widget.DeviceDefault.Button.Toggle"
         android:layout_width="280dp"
         android:layout_height="40dp"
-        android:layout_marginTop="360dp"
+        android:layout_marginTop="380dp"
         android:layout_marginEnd="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
@@ -131,7 +149,7 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="430dp"
+        android:layout_marginTop="450dp"
         android:background="@color/colorAccent"
         android:drawableEnd="@drawable/mail"
         android:drawableRight="@drawable/mail"
